@@ -308,7 +308,7 @@ export const DIALOGUES = {
           { text: 'Aqui estão 30 moedas. Deixem a vila em paz.', req: { gold: 30 }, next: 'pay' },
         ],
       },
-      fight: { text: 'Hah! Rapazes, ensinem bons modos a{o|à} herói{|na}!', effect: (S) => S.denteFight(), end: true },
+      fight: { text: 'Hah! Rapazes, ensinem bons modos a{o|à} {herói|heroína}!', effect: (S) => S.denteFight(), end: true },
       persuade: {
         text: '...O Corvo disse pra cobrar dos nobres, não de... *ele olha para Rosalina, para as crianças.* Tá. Tá bom. Mas se ele perguntar, você é que vai explicar. Vamos embora, rapazes.',
         effect: (S) => { S.set('banditsPersuaded'); S.karma(5); S.denteLeave(); S.record('Convenceu os bandidos a deixar Brumavale'); },
@@ -622,7 +622,7 @@ export const DIALOGUES = {
     start(S) { return !S.q.isStarted('sq_tico') ? 'tico' : S.flags.ticoColorful ? 'happy' : 'hero'; },
     nodes: {
       tico: { text: 'Psiu! Você quer saber um segredo? Tem um bicho desenhado escondido perto do cemitério! Ele tem olhos enormes e fala "boing"! A mamãe disse que é mentira, mas é VERDADE!', end: true },
-      hero: { text: (S) => (S.stats.level > 5 ? 'Você é {o|a} herói{|na} da estrela! Me ensina a soltar fogo? Por favorzinho?' : 'Você vai salvar o reino? Meu pai disse que heróis comem verdura. Você come verdura?'), end: true },
+      hero: { text: (S) => (S.stats.level > 5 ? 'Você é {o|a} {herói|heroína} da estrela! Me ensina a soltar fogo? Por favorzinho?' : 'Você vai salvar o reino? Meu pai disse que heróis comem verdura. Você come verdura?'), end: true },
       happy: { text: 'O Tico agora é colorido!! Ele fez um desenho de um cavalo e o cavalo saiu correndo!! Foi o melhor dia da minha vida!!', end: true },
     },
   },

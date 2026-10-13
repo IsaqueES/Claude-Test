@@ -61,7 +61,7 @@ export const ENDINGS = {
     slides: [
       { head: 'O Último Golpe', text: 'Vaelthor cai. Por um instante, seu rosto fica em paz. "Diga a ela... que eu tentei."\n\nO Coração, livre de seu mestre, flutua até você.' },
       { head: 'O Véu restaurado', text: 'Com os fragmentos reunidos, o Coração de Aether volta a pulsar. A Fenda se fecha em silêncio. Os Ecos se desfazem como névoa ao sol.\n\nEm algum lugar muito longe, uma voz infantil sussurra "obrigada" — e se apaga para sempre no Sonhar.' },
-      { head: 'Guardião', text: '{nome} se torna Guardi{ão|ã} do Coração, morando na torre que um dia foi de Vaelthor. O reino prospera. As crianças cantam canções sobre {o|a} herói{|na} da estrela.\n\nMas, em algumas noites, você sonha com uma menina de luz que nunca chegou a conhecer.' },
+      { head: 'Guardião', text: '{nome} se torna Guardi{ão|ã} do Coração, morando na torre que um dia foi de Vaelthor. O reino prospera. As crianças cantam canções sobre {o|a} {herói|heroína} da estrela.\n\nMas, em algumas noites, você sonha com uma menina de luz que nunca chegou a conhecer.' },
     ],
   },
   ultima_chama: {

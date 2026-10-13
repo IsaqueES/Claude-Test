@@ -6,20 +6,23 @@ RPG de ação 3D em terceira pessoa, com estética medieval, que roda no navegad
 
 ## Como jogar
 
-Requisito: [Node.js](https://nodejs.org) 20.19 ou mais recente (ou 22.12+).
+**Sem instalar nada:** abra o arquivo [`docs/index.html`](docs/index.html) no navegador (duplo clique). Ele contém o jogo inteiro num único arquivo e funciona sem servidor e sem internet. Para jogar online, ative o GitHub Pages do repositório apontando para a pasta `/docs` (Settings → Pages).
+
+**Para desenvolver**, com [Node.js](https://nodejs.org) 20.19 ou mais recente (ou 22.12+):
 
 ```bash
 npm install
 npm run dev        # abre em http://localhost:5173
 ```
 
-Outras opções:
+Outros comandos:
 
 | Comando | Resultado |
 | --- | --- |
 | `npm run build` | Build de produção em `dist/`, para servir em qualquer servidor web estático. |
-| `npm run build:single` | Gera `docs/index.html`, um **único arquivo** com tudo embutido. Abre com duplo clique, sem servidor, e também pode ser publicado no GitHub Pages (Settings → Pages → pasta `/docs`). |
+| `npm run build:single` | Regera `docs/index.html`, o arquivo único com tudo embutido. |
 | `npm run preview` | Serve o conteúdo de `dist/` localmente. |
+| `npm test` | Regera `docs/index.html` e roda um teste de fumaça num Chromium headless: começa um jogo, luta, usa poderes, abre os menus e salva, falhando se houver qualquer erro de JavaScript. Na primeira vez, instale o navegador com `npx playwright install chromium` (ou aponte `CHROME_PATH` para um Chromium já instalado). |
 
 Recomendado: navegador baseado em Chromium ou Firefox atualizado, com mouse e teclado. Em *Configurações* dá para baixar a qualidade gráfica (sombras, bloom e resolução) se o desempenho estiver baixo.
 
