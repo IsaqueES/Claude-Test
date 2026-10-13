@@ -96,7 +96,7 @@ Também há inventário com armas, armaduras e amuletos que alteram os atributos
 - **Seis finais diferentes**, cada um com epílogo próprio que mostra as consequências das suas escolhas para os personagens e para o reino.
 
 ### Estética medieval
-Vila com casas de enxaimel, ferraria, moinho e taverna; castelo com muralhas, torres e portões; templo em ruínas; acampamento de bandidos; cemitério; floresta, lago e montanhas. Ciclo de dia e noite com tochas e janelas acesas, névoa, água animada, vegetação balançando ao vento, interface com pergaminho e fontes góticas, e trilha sonora medieval gerada em tempo real (alaúde, flauta, tambores) que muda conforme o lugar e a situação.
+Vila com casas de enxaimel, ferraria, moinho e taverna; castelo com muralhas, torres e portões; templo em ruínas; acampamento de bandidos; cemitério; floresta, lago e montanhas. Ciclo de dia e noite com tochas e janelas acesas, névoa, água animada, vegetação balançando ao vento, interface de pergaminho com tipografia de inspiração medieval, e trilha sonora medieval gerada em tempo real (alaúde, flauta, tambores) que muda conforme o lugar e a situação.
 
 ## Salvamento
 
@@ -114,6 +114,8 @@ src/
   data/      conteúdo: inimigos, itens, missões, diálogos, NPCs, lore e finais
   ui/        HUD, menus, telas (título, criação, morte, finais)
   post/      pós-processamento (bloom e efeitos de tela)
+docs/        index.html: o jogo inteiro num arquivo só (gerado por npm run build:single)
+scripts/     teste de fumaça (npm test)
 ```
 
 Feito com [Three.js](https://threejs.org) e [Vite](https://vitejs.dev). Fontes: Cinzel, Cinzel Decorative, EB Garamond e Bangers (SIL Open Font License), via [Fontsource](https://fontsource.org).
