@@ -73,6 +73,11 @@ export class NPC extends Entity {
 
   update(dt) {
     if (!this.checkVisible()) return;
+    // longe da câmera: não desenha nem anima (economiza GPU e CPU)
+    const cam = G.camera.position;
+    const far = (cam.x - this.pos.x) ** 2 + (cam.z - this.pos.z) ** 2 > 170 * 170;
+    this.object.visible = !far;
+    if (far) return;
     const p = G.player;
     let speed = 0, vx = 0, vz = 0;
     const near = p && this.distTo(p) < 5;

@@ -319,7 +319,7 @@ export class Vegetation {
     for (const key in lists) {
       const geo = allGeos[key];
       const isRock = key.startsWith('rock');
-      this.buildInstanced(geo, lists[key], isRock ? this.matStatic : this.matWind, { castShadow: true });
+      this.buildInstanced(geo, lists[key], isRock ? this.matStatic : this.matWind, { castShadow: true, chunk: 0 });
     }
 
     // Grama e flores (somente perto do jogador são visíveis)
@@ -327,11 +327,14 @@ export class Vegetation {
     this.buildSpecials(rng);
   }
 
+  // opts.chunk: tamanho do bloco espacial (0 = uma única malha com todas as instâncias).
+  // Árvores e rochas são poucas e leves: uma malha por espécie economiza centenas de chamadas
+  // de desenho. A grama continua em blocos para poder sumir à distância.
   buildInstanced(geo, items, material, opts = {}) {
-    // agrupa por bloco espacial
+    const size = opts.chunk ?? this.chunkSize;
     const chunks = new Map();
     for (const it of items) {
-      const k = Math.floor(it.x / this.chunkSize) + ',' + Math.floor(it.z / this.chunkSize);
+      const k = size ? Math.floor(it.x / size) + ',' + Math.floor(it.z / size) : 'all';
       (chunks.get(k) || chunks.set(k, []).get(k)).push(it);
     }
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color();
@@ -395,7 +398,7 @@ export class Vegetation {
       if (t.roadDist(x, z) < 1.2) continue;
       items.push({ x, y: t.heightAt(x, z), z, s: rng.float(0.8, 1.2), ry: rng.float(-0.6, 0.6) + Math.PI * 0.85, c: 0xffffff });
     }
-    this.buildInstanced(sun, items, this.matWind, { castShadow: false });
+    this.buildInstanced(sun, items, this.matWind, { castShadow: false, chunk: 0 });
     // Cogumelos (vermelhos e brilhantes na clareira)
     const mush = mushroomGeo();
     const mitems = [];
@@ -411,7 +414,7 @@ export class Vegetation {
       mitems.push({ x, y: t.heightAt(x, z), z, s: rng.float(5, 8), ry: rng.float(0, 6.28), c: 0xd83a2a });
       this.collision.addCircle(x, z, 0.6, { y0: t.heightAt(x, z) - 1, y1: t.heightAt(x, z) + 3 });
     }
-    this.buildInstanced(mush, mitems, this.matGlowCap, { castShadow: true });
+    this.buildInstanced(mush, mitems, this.matGlowCap, { castShadow: true, chunk: 0 });
   }
 
   update(dt, camPos) {
