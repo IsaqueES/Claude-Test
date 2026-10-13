@@ -394,6 +394,9 @@ button { font-family: var(--font-head); }
 .ending-screen.toon { background: radial-gradient(circle at center, #ffe8a0 0%, #ff9a6a 50%, #3a1a4a 100%); }
 .ending-screen.toon .ending-title, .ending-screen.toon .ending-slide h2 { font-family: var(--font-comic); color: #ffe030; -webkit-text-stroke: 2px #1a0a20; paint-order: stroke fill; text-shadow: 4px 4px 0 #e8304a; }
 .ending-screen.toon .ending-slide p { color: #1a0a20; font-weight: 600; }
+.ending-screen.toon .ending-kicker { color: #3a1a4a; }
+.ending-screen.toon .credits p, .ending-screen.toon .credits-roll .thanks { color: #1a0a20; }
+.ending-screen.toon .credits h3 { color: #ffe030; -webkit-text-stroke: 1px #1a0a20; paint-order: stroke fill; }
 .ending-box { max-width: 780px; padding: 0 30px; text-align: center; }
 .ending-kicker { font-family: var(--font-head); letter-spacing: .4em; text-transform: uppercase; color: #c8b8e8; }
 .ending-title { font-family: var(--font-title); font-size: clamp(40px, 6vw, 76px); color: var(--gold); margin: 10px 0; text-shadow: 0 0 30px rgba(216,178,90,.4); animation: fadein 2s; }

@@ -30,7 +30,7 @@ import { Screens } from '../ui/Screens.js';
 import { QUESTS } from '../data/quests.js';
 import { DIALOGUES } from '../data/dialogues.js';
 import { buildNPCDefs } from '../data/npcs.js';
-import { SPAWN_ZONES } from '../data/enemies.js';
+import { SPAWN_ZONES, ENEMY_TYPES } from '../data/enemies.js';
 import { INTRO_PAGES, ENDINGS, epilogueSlides, MEMORY_IDS } from '../data/lore.js';
 import { buildPlayerModel } from '../entities/Models.js';
 
@@ -100,6 +100,9 @@ export class Game {
     G.player.object.visible = false;
     G.npcs.spawnAll(buildNPCDefs(world.anchors));
     this.setupWorldInteractables();
+    onProgress?.('Preparando feitiços e criaturas...');
+    await tick();
+    await this.prewarmShaders();
     events.on('playerDied', () => this.onPlayerDied());
     events.on('kill', (d) => this.onKill(d));
     events.on('questDone', (id) => { if (id === 'sq_memorias') G.audio?.play('memory'); });
@@ -110,6 +113,49 @@ export class Game {
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
     this.setupDebug();
+  }
+
+  // Compila antes de o jogo começar os shaders de todos os inimigos, chefes, aliados, objetos e
+  // dos materiais avulsos dos efeitos. Sem isso, cada tipo novo trava o jogo na primeira aparição.
+  async prewarmShaders() {
+    const R = G.engine.renderer;
+    const warm = new THREE.Scene();
+    const bossCls = { alpha: AlphaBoss, colossus: ColossusBoss, pimpolho: PimpolhoBoss, corvoBoss: CorvoBoss, vaelthor: VaelthorBoss };
+    for (const type in ENEMY_TYPES) {
+      try {
+        const e = bossCls[type] ? new bossCls[type]({ x: 0, z: 0 }) : type.startsWith('ally') ? new Ally(type, { x: 0, z: 0 }) : new Enemy(type, { x: 0, z: 0 });
+        warm.add(e.object);
+      } catch (err) { console.warn('prewarm', type, err); }
+    }
+    for (const model of ['root', 'pillar', 'crystal']) warm.add(new WorldObject({ id: 'warm_' + model, type: 'warm', model, x: 0, z: 0 }).object);
+    warm.add(new Sheep({ id: 'warm_sheep', name: '', x: 0, z: 0 }).object);
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    for (const m of [
+      new THREE.MeshStandardMaterial({ flatShading: true }),
+      new THREE.MeshStandardMaterial({ flatShading: true, transparent: true, opacity: 0.5 }),
+      new THREE.MeshStandardMaterial(),
+      new THREE.MeshToonMaterial(),
+      new THREE.MeshBasicMaterial(),
+      new THREE.MeshBasicMaterial({ side: THREE.BackSide }),
+      new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }),
+      new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+      new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
+    ]) warm.add(new THREE.Mesh(geo, m));
+    // A cena é desenhada num alvo de renderização do pós-processamento (sem tone mapping, espaço
+    // linear): compila com esse mesmo alvo ativo para gerar os mesmos programas usados no jogo.
+    // As luzes e a névoa vêm da cena principal.
+    const prevTarget = R.getRenderTarget();
+    R.setRenderTarget(G.post.composer.readBuffer);
+    let done = null;
+    try {
+      // compileAsync só ajuda com KHR_parallel_shader_compile; sem a extensão, compila direto.
+      if (R.extensions.has('KHR_parallel_shader_compile')) done = R.compileAsync(warm, G.camera, G.scene);
+      else R.compile(warm, G.camera, G.scene);
+    } finally { R.setRenderTarget(prevTarget); }
+    if (done) await Promise.race([done, wait(10)]);
+    // Libera só as geometrias. Os materiais nunca recebem dispose(), então os programas compilados
+    // continuam em cache e são reaproveitados por qualquer material equivalente criado depois.
+    warm.traverse((o) => o.geometry?.dispose());
   }
 
   setState(s) {
@@ -200,7 +246,7 @@ export class Game {
     G.inventory = new Inventory();
     G.powers = new PowerManager();
     G.story = new Story();
-    G.quests.state = {}; G.quests.tracked = null;
+    G.quests.reset();
     G.bossMusic = false;
     G.ui.setBoss(null);
     G.post.target.toon = G.post.target.psychic = G.post.target.shadow = G.post.target.rift = 0;
@@ -466,6 +512,7 @@ export class Game {
     for (const e of G.entities.list) if (e.kind === 'enemy' && e.aiTarget === p && !e.boss) { e.aiTarget = null; e.state = 'return'; }
     for (const e of G.entities.list) if (e.boss && e.alive) { e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.35); e.aiTarget = null; e.introDone = false; e.invulnerable = true; G.ui.setBoss(null); G.bossMusic = false; }
     G.cameraRig.snapBehind(p.yaw);
+    G.cameraRig.pitch = -0.18;
     this.setState('play');
     G.ui.fade(0, 1);
   }
@@ -664,6 +711,7 @@ export class Game {
       xp: (n) => G.stats.addXp(n),
       attr: (k) => G.stats.attr(k),
       toast: (t, type) => G.ui.toast(t, type),
+      subtitle: (t, dur) => G.ui.showSubtitle(t, dur),
       codex: (id) => G.story.addCodex(id),
       start: (id) => G.quests.start(id),
       event: (type, data) => events.emit(type, data),

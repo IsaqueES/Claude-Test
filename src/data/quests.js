@@ -1,6 +1,7 @@
 // Missões principais e secundárias.
 // Cada estágio: { id, text, objectives: [...], marker, onStart(S), setup(S, restoring), onComplete(S) }
 // setup deve ser idempotente (é chamado ao entrar no estágio e ao carregar um save).
+import { G } from '../core/context.js';
 import { LOC } from '../world/WorldMap.js';
 
 const ring = (cx, cz, r, n, a0 = 0) => [...Array(n)].map((_, i) => { const a = a0 + (i / n) * Math.PI * 2; return { x: cx + Math.cos(a) * r, z: cz + Math.sin(a) * r }; });
@@ -281,7 +282,7 @@ export const QUESTS = {
     stages: [
       {
         id: 'find', text: 'Encontre as ovelhas e guie-as até o curral (aproxime-se e pressione E)',
-        objectives: [{ type: 'count', count: 3, label: 'Ovelhas no curral', fn: () => window.__G?.story.flags.sheepPenned || 0 }],
+        objectives: [{ type: 'count', count: 3, label: 'Ovelhas no curral', fn: () => G.story.flags.sheepPenned || 0 }],
         marker: (S) => S.nearestSheep(),
         setup(S) { S.setupSheep(); },
       },
@@ -308,7 +309,12 @@ export const QUESTS = {
     summary: 'Osmar, o moleiro, ouve choro no moinho todas as noites desde o Eclipse. Ele acha que é sua falecida esposa, Helena.',
     rewards: { xp: 200 },
     stages: [
-      { id: 'start', text: 'Visite o moinho à noite (entre 21h e 5h — descanse na taverna se preciso)', objectives: [{ type: 'flag', flag: 'helenaSeen', label: '' }], marker: { x: LOC.mill.x - 3, z: LOC.mill.z + 6 } },
+      {
+        id: 'start', text: 'Visite o moinho à noite (entre 21h e 5h — descanse na taverna se preciso)',
+        objectives: [{ type: 'reach', x: LOC.mill.x - 3, z: LOC.mill.z + 6, r: 18, when: () => G.sky.isNight() }],
+        marker: { x: LOC.mill.x - 3, z: LOC.mill.z + 6 },
+        onComplete(S) { S.set('helenaSeen'); S.subtitle('Um choro baixinho vem da beira do rio. Sobre a água, uma mulher translúcida olha para você.', 4.5); },
+      },
       { id: 'helena', text: 'Fale com o fantasma', objectives: [{ type: 'talk', npc: 'helena' }], auto: false },
       {
         id: 'ring', text: 'Procure o anel de Helena no rio, perto do moinho', objectives: [{ type: 'have', item: 'anel_helena', label: 'Anel de Helena' }], marker: { interact: 'anel_rio' },
@@ -389,7 +395,7 @@ export const QUESTS = {
     summary: 'Fragmentos da vida de Lyra estão espalhados pelo reino como borboletas de luz. Juntos, talvez revelem algo importante.',
     rewards: { xp: 350, items: [['coracao_lyra', 1]] },
     stages: [
-      { id: 'collect', text: 'Recupere as memórias de Lyra', objectives: [{ type: 'count', count: 5, label: 'Memórias', fn: () => window.__G?.story.flags.lyraMemories || 0 }] },
+      { id: 'collect', text: 'Recupere as memórias de Lyra', objectives: [{ type: 'count', count: 5, label: 'Memórias', fn: () => G.story.flags.lyraMemories || 0 }] },
     ],
     onComplete(S) { S.set('lullaby'); S.codex('cancao'); },
     doneText: 'Você conhece a canção de ninar de Lyra inteira. Ela ecoa na sua marca como um sino distante.',

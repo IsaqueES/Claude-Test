@@ -95,6 +95,8 @@ export class CameraRig {
       if (input.isDown('ArrowUp')) this.pitch += dt * 1.4;
       if (input.isDown('ArrowDown')) this.pitch -= dt * 1.4;
     }
+    // morto: a câmera se inclina para baixo (o corpo cai para trás, em direção a ela)
+    if (!player.alive) this.pitch = damp(this.pitch, -0.85, 1.5, dt);
     this.pitch = clamp(this.pitch, -1.15, 0.6);
 
     // Trava de alvo
@@ -119,7 +121,7 @@ export class CameraRig {
     const f = this.forward(_dir);
     const right = this.flatRight(_q);
     // distância desejada e colisão
-    let want = this.dist;
+    let want = this.dist + (player.alive ? 0 : Math.min(3, (player.deadT || 0) * 2));
     const origin = this.pivot.clone().addScaledVector(right, this.shoulder * 0.7);
     const back = f.clone().negate();
     const hit = G.world.collision.raycast(origin, back, want + 0.3, (c) => c.camera !== false && !c.platform);

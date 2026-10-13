@@ -10,6 +10,7 @@ export class QuestManager {
     this.state = {};
     this.tracked = null;
     this._t = 0;
+    this._pending = {}; // id da missão -> índice do estágio com avanço agendado
     events.on('kill', (d) => this.onEvent('kill', d));
     events.on('item', (d) => this.onEvent('item', d));
     events.on('itemRemoved', (d) => this.onEvent('item', d));
@@ -153,7 +154,7 @@ export class QuestManager {
       let v = s.progress[i];
       if (o.type === 'have') v = Math.min(o.count || 1, G.inventory.count(o.item));
       else if (o.type === 'flag') v = G.story.flags[o.flag] ? 1 : 0;
-      else if (o.type === 'reach' && G.player) {
+      else if (o.type === 'reach' && G.player && (!o.when || o.when())) {
         const d = Math.hypot(G.player.pos.x - o.x, G.player.pos.z - o.z);
         if (d < (o.r || 8)) v = 1;
       } else if (o.type === 'count' && o.fn) v = Math.min(o.count || 1, o.fn());
@@ -165,15 +166,30 @@ export class QuestManager {
   afterProgress(id) {
     const s = this.state[id];
     if (!s || s.status !== 'active') return;
-    const stage = this.defs[id].stages[s.stage];
     events.emit('questUpdate', id);
-    const done = stage.objectives.every((o, i) => s.progress[i] >= (o.count || 1));
-    if (done && stage.auto !== false) {
-      // pequeno atraso para o jogador perceber
-      if (s._pending) return;
-      s._pending = true;
-      setTimeout(() => { s._pending = false; if (this.state[id]?.status === 'active' && this.state[id].stage === this.defs[id].stages.indexOf(stage)) this.advance(id); }, 600);
-    }
+    this.scheduleAdvance(id);
+  }
+
+  stageDone(id) {
+    const s = this.state[id];
+    const stage = s && this.defs[id].stages[s.stage];
+    return !!stage?.objectives && stage.objectives.every((o, i) => s.progress[i] >= (o.count || 1));
+  }
+
+  // Com todos os objetivos do estágio atual cumpridos, avança após um pequeno atraso (para o
+  // jogador perceber). O agendamento vale só para aquele estágio: um avanço pendente de um
+  // estágio anterior nunca bloqueia o seguinte.
+  scheduleAdvance(id) {
+    const s = this.state[id];
+    if (!s || s.status !== 'active') return;
+    const idx = s.stage;
+    if (this.defs[id].stages[idx]?.auto === false || !this.stageDone(id)) return;
+    if (this._pending[id] === idx) return;
+    this._pending[id] = idx;
+    setTimeout(() => {
+      if (this._pending[id] === idx) delete this._pending[id];
+      if (this.state[id]?.status === 'active' && this.state[id].stage === idx && this.stageDone(id)) this.advance(id);
+    }, 600);
   }
 
   update(dt) {
@@ -230,8 +246,15 @@ export class QuestManager {
     return { state: st, tracked: this.tracked };
   }
 
+  reset() {
+    this.state = {};
+    this.tracked = null;
+    this._pending = {};
+  }
+
   load(d) {
     this.state = {};
+    this._pending = {};
     for (const k in d.state || {}) if (this.defs[k]) this.state[k] = { ...d.state[k], progress: [...(d.state[k].progress || [])] };
     this.tracked = d.tracked;
   }
@@ -244,6 +267,8 @@ export class QuestManager {
       stage.setup?.(this.ctx(), true);
     }
     for (const id of Object.keys(this.state)) this.defs[id].restore?.(this.ctx(), this.state[id]);
+    // um save feito logo depois de cumprir os objetivos ainda precisa avançar o estágio
+    for (const id of this.active()) this.scheduleAdvance(id);
   }
 }
 

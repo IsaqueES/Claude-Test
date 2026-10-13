@@ -15,12 +15,14 @@ export class Screens {
     this.root = root;
     this.el = h('div', { class: 'screen hidden interactive' });
     root.appendChild(this.el);
+    this.token = 0; // muda a cada troca de tela: sequências assíncronas antigas (intro, final) param sozinhas
   }
 
-  hide() { this.el.classList.add('hidden'); clear(this.el); this.el.className = 'screen hidden interactive'; }
+  hide() { this.token++; this.el.classList.add('hidden'); clear(this.el); this.el.className = 'screen hidden interactive'; }
 
   // ---------------- Título ----------------
   showTitle({ hasSave, onNew, onContinue }) {
+    this.token++;
     clear(this.el);
     this.el.className = 'screen title-screen interactive';
     const menu = h('div', { class: 'title-menu' });
@@ -50,6 +52,7 @@ export class Screens {
 
   // ---------------- Criação de personagem ----------------
   showCreation(onChange, onDone) {
+    this.token++;
     clear(this.el);
     this.el.className = 'screen create-screen interactive';
     const app = { name: 'Aren', gender: 'm', skin: 1, hairColor: 1, hairStyle: 'short', cape: 0, outfit: 0, origin: 'ferreiro', beard: false };
@@ -94,6 +97,8 @@ export class Screens {
 
   // ---------------- Introdução ----------------
   async showIntro(pages, onDone) {
+    const tok = ++this.token;
+    const live = () => this.token === tok;
     clear(this.el);
     this.el.className = 'screen intro-screen interactive';
     const text = h('div', { class: 'intro-text' });
@@ -101,16 +106,16 @@ export class Screens {
     const skip = h('button', { class: 'btn skip', onclick: () => { skipped = true; finish(); } }, 'Pular ▸▸');
     this.el.append(h('div', { class: 'intro-embers' }), text, skip);
     let done = false;
-    const finish = () => { if (done) return; done = true; onDone(); };
+    const finish = () => { if (done || !live()) return; done = true; onDone(); };
     for (const pg of pages) {
-      if (skipped) return;
+      if (skipped || !live()) return;
       clear(text);
       const p = h('p', { class: 'intro-p' + (pg.voice ? ' voice' : '') }, fmt(pg.text));
       text.appendChild(p);
       void p.offsetWidth;
       p.classList.add('in');
-      await waitOrClick(this.el, pg.time || Math.max(4.5, pg.text.length * 0.055), () => skipped);
-      if (skipped) return;
+      await waitOrClick(this.el, pg.time || Math.max(4.5, pg.text.length * 0.055), () => skipped || !live());
+      if (skipped || !live()) return;
       p.classList.remove('in');
       p.classList.add('out');
       await wait(0.8);
@@ -120,6 +125,7 @@ export class Screens {
 
   // ---------------- Morte ----------------
   showDeath({ onRetry, onLoad }) {
+    this.token++;
     clear(this.el);
     this.el.className = 'screen death-screen interactive';
     this.el.append(
@@ -133,6 +139,8 @@ export class Screens {
 
   // ---------------- Final ----------------
   async showEnding(ending, slides, onDone) {
+    const tok = ++this.token;
+    const live = () => this.token === tok;
     clear(this.el);
     this.el.className = 'screen ending-screen interactive ' + (ending.style || '');
     const box = h('div', { class: 'ending-box' });
@@ -142,16 +150,18 @@ export class Screens {
     this.el.appendChild(skip);
     // título
     box.append(h('div', { class: 'ending-kicker' }, 'Final ' + ending.index + ' de 6'), h('h1', { class: 'ending-title' }, ending.title));
-    await waitOrClick(this.el, 3.5, () => skipAll.v);
+    await waitOrClick(this.el, 3.5, () => skipAll.v || !live());
     for (const s of slides) {
+      if (!live()) return;
       clear(box);
       const p = h('div', { class: 'ending-slide' }, s.head ? h('h2', {}, fmt(s.head)) : null, ...fmt(s.text).split('\n\n').map((t) => h('p', {}, t)));
       box.appendChild(p);
       void p.offsetWidth;
       p.classList.add('in');
       skipAll.v = false;
-      await waitOrClick(this.el, Math.max(5, s.text.length * 0.05), () => skipAll.v);
+      await waitOrClick(this.el, Math.max(5, s.text.length * 0.05), () => skipAll.v || !live());
     }
+    if (!live()) return;
     // créditos
     clear(box);
     skip.remove();

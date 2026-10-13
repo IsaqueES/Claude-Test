@@ -128,7 +128,7 @@ export class Loot {
     this.coinMat = new THREE.MeshStandardMaterial({ color: 0xffd040, metalness: 0.8, roughness: 0.3, emissive: 0x403000 });
     this.bagGeo = new THREE.IcosahedronGeometry(0.28, 0);
     this.bagMat = new THREE.MeshStandardMaterial({ color: 0x8a6a3a, flatShading: true, emissive: 0x201000 });
-    this.glowMat = new THREE.SpriteMaterial({ color: 0xffe080, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
+    this.glowMat = new THREE.SpriteMaterial({ map: G.world?.glowTex ?? null, color: 0xffe080, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
   }
 
   dropGold(pos, amount) {

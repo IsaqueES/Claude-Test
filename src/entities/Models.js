@@ -174,7 +174,9 @@ export function buildEnemyModel(kind) {
     case 'doodleYellow':
     case 'doodleBlue': {
       const paint = { doodleRed: 0xe83a2a, doodleYellow: 0xf0c020, doodleBlue: 0x2a6ae8 }[kind];
-      const built = buildDoodle({ body: 0xffffff, accent: 0x222222, paint, hat: paint, shoes: paint ?? 0xd83a3a, scale: paint ? 1.25 : 1 });
+      // os Rabiscos coloridos ficam tingidos com a tinta roubada (reconhecíveis de qualquer ângulo)
+      const body = paint ? new THREE.Color(paint).lerp(new THREE.Color(0xffffff), 0.45).getHex() : 0xffffff;
+      const built = buildDoodle({ body, accent: 0x222222, paint, hat: paint, shoes: paint ?? 0xd83a3a, scale: paint ? 1.25 : 1 });
       return { built, anim: new HumanoidAnimator(built, { style: 'doodle' }), toon: true };
     }
     case 'golem': {

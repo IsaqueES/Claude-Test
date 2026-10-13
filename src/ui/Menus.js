@@ -265,7 +265,7 @@ export class Menus {
       if (s.status === 'active') {
         right.appendChild(h('h3', {}, 'Objetivo atual'));
         for (const l of Q.objectiveLines(id)) right.appendChild(h('div', { class: 'obj-line' + (l.done ? ' done' : '') }, (l.done ? '✔ ' : '• ') + l.text));
-        right.appendChild(h('h3', {}, 'Progresso'));
+        if (s.stage > 0) right.appendChild(h('h3', {}, 'Progresso'));
         d.stages.slice(0, s.stage).forEach((st) => right.appendChild(h('div', { class: 'obj-line done' }, '✔ ' + fmt(st.text || ''))));
         if (Q.tracked !== id) right.appendChild(h('button', { class: 'btn', onclick: () => { Q.tracked = id; this.show('journal'); } }, 'Rastrear missão'));
       } else if (s.status === 'done') {
