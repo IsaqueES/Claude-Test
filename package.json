@@ -10,7 +10,6 @@
     "build:single": "vite build --mode single",
     "preview": "vite preview"
   },
-  "license": "MIT",
   "dependencies": {
     "@fontsource/bangers": "^5.3.0",
     "@fontsource/cinzel": "^5.3.0",

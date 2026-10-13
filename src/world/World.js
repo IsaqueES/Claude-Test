@@ -118,6 +118,7 @@ export class World {
     this.group.add(this.halos);
     // Luzes reutilizáveis para as chamas mais próximas
     this.torchLights = [];
+    this.extraFlames = []; // chamas acesas durante o jogo: { x, y, z, intensity }
     for (let i = 0; i < 4; i++) {
       const l = new THREE.PointLight(0xff9a40, 0, 16, 1.6);
       this.scene.add(l);
@@ -251,18 +252,24 @@ export class World {
     this.flameMesh.instanceMatrix.needsUpdate = true;
     this.halos.material.opacity = 0.25 + night * 0.45;
 
-    // luzes nas chamas mais próximas do foco
-    if (focus && this.flamePoints.length) {
-      const sorted = this.flamePoints
-        .map((f) => ({ f, d: (f.x - focus.x) ** 2 + (f.z - focus.z) ** 2 }))
-        .sort((a, b) => a.d - b.d);
+    // luzes nas chamas mais próximas do foco (conjunto fixo: o número de luzes nunca muda)
+    if (focus) {
+      const cands = [];
+      for (const f of this.flamePoints) {
+        const d = (f.x - focus.x) ** 2 + (f.z - focus.z) ** 2;
+        if (d < 70 * 70) cands.push({ x: f.x, y: f.y + 0.4, z: f.z, d, base: (f.kind === 'fire' || f.kind === 'forge' ? 14 : 8) * (0.25 + night * 0.9) });
+      }
+      for (const f of this.extraFlames) {
+        const d = (f.x - focus.x) ** 2 + (f.z - focus.z) ** 2;
+        if (d < 70 * 70) cands.push({ x: f.x, y: f.y, z: f.z, d, base: f.intensity, steady: true });
+      }
+      cands.sort((a, b) => a.d - b.d);
       this.torchLights.forEach((l, i) => {
-        const e = sorted[i];
-        if (!e || e.d > 70 * 70) { l.intensity = 0; return; }
-        l.position.set(e.f.x, e.f.y + 0.4, e.f.z);
-        const flick = 0.85 + Math.sin(t * 17 + i * 2) * 0.1 + Math.sin(t * 29 + i) * 0.05;
-        const base = e.f.kind === 'fire' || e.f.kind === 'forge' ? 14 : 8;
-        l.intensity = base * (0.25 + night * 0.9) * flick;
+        const e = cands[i];
+        if (!e) { l.intensity = 0; return; }
+        l.position.set(e.x, e.y, e.z);
+        const flick = e.steady ? 1 : 0.85 + Math.sin(t * 17 + i * 2) * 0.1 + Math.sin(t * 29 + i) * 0.05;
+        l.intensity = e.base * flick;
       });
     }
 

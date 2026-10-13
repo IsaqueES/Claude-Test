@@ -263,6 +263,8 @@ export class Boss extends Enemy {
     let mv = { vx: 0, vz: 0, speed: 0 };
     if (this.stunT <= 0 && T) {
       if (this.atk) {
+        // first: verdadeiro só na primeira chamada do ataque (independe da taxa de quadros)
+        this.atk.first = this.atk.t === 0;
         this.atk.t += dt;
         const done = this['atk_' + this.atk.name](dt, this.atk, T);
         if (done) { this.atk = null; this.atkCd = rand(this.def.cd[0], this.def.cd[1]) * (this.phase >= 3 ? 0.65 : this.phase === 2 ? 0.8 : 1); }
@@ -348,7 +350,7 @@ export class CorvoBoss extends Boss {
     return this.approach(dt, T, d > 8 ? 1.8 : 4, 1, Math.sin(G.time.now * 1.3) * 0.6);
   }
   atk_combo(dt, A, T) {
-    if (A.t < 0.02) { this.anim.play('stab', { speed: 1.3 }); A.hit1 = false; }
+    if (A.first) { this.anim.play('stab', { speed: 1.3 }); A.hit1 = false; }
     if (A.t > 0.4 && !A.second) { A.second = true; this.anim.play('stab', { speed: 1.3 }); A.hit2 = false; }
     this.faceYaw(this.yawTo(T.pos.x, T.pos.z), 10, dt);
     A.move = A.t < 0.25 ? { vx: Math.sin(this.yaw) * 5, vz: Math.cos(this.yaw) * 5, speed: 5 } : { vx: 0, vz: 0, speed: 0 };
@@ -359,7 +361,7 @@ export class CorvoBoss extends Boss {
     return A.t > 0.95;
   }
   atk_knives(dt, A, T) {
-    if (A.t < 0.02) this.anim.play('cast', { speed: 1.2 });
+    if (A.first) this.anim.play('cast', { speed: 1.2 });
     this.faceYaw(this.yawTo(T.pos.x, T.pos.z), 12, dt);
     if (A.t > 0.3 && !A.fired) {
       A.fired = true;
@@ -374,7 +376,7 @@ export class CorvoBoss extends Boss {
     return A.t > 0.7;
   }
   atk_smoke(dt, A, T) {
-    if (A.t < 0.02) {
+    if (A.first) {
       G.fx.emit({ x: this.pos.x, y: this.pos.y + 1, z: this.pos.z, count: 40, color: 0x5a5a60, color2: 0x2a2a30, size: 2, sizeEnd: 4, life: 1.2, speed: 2.5, blend: 'normal', alpha: 0.8 });
       G.audio?.play('steam', { pos: this.pos });
       this.object.visible = false; this.targetable = false;
@@ -412,14 +414,14 @@ export class AlphaBoss extends Boss {
     return this.approach(dt, T, 2.2, 1.05, d < 6 ? Math.sin(G.time.now) * 0.5 : 0);
   }
   atk_bite(dt, A, T) {
-    if (A.t < 0.02) this.anim.play('bite', { dur: 0.6 });
+    if (A.first) this.anim.play('bite', { dur: 0.6 });
     this.faceYaw(this.yawTo(T.pos.x, T.pos.z), 10, dt);
     A.move = A.t > 0.15 && A.t < 0.35 ? { vx: Math.sin(this.yaw) * 6, vz: Math.cos(this.yaw) * 6, speed: 6 } : { vx: 0, vz: 0 };
     if (this.anim.inHitWindow() && !A.hit) A.hit = this.meleeHit(T, 3.0, 1);
     return A.t > 0.65;
   }
   atk_pounce(dt, A, T) {
-    if (A.t < 0.02) { this.anim.play('pounce', { dur: 0.9 }); G.fx.telegraph({ shape: 'rect', x: this.pos.x, z: this.pos.z, yaw: Math.atan2(A.dir.x, A.dir.z), length: 11, width: 2.4, dur: 0.35, color: 0xff4020 }); }
+    if (A.first) { this.anim.play('pounce', { dur: 0.9 }); G.fx.telegraph({ shape: 'rect', x: this.pos.x, z: this.pos.z, yaw: Math.atan2(A.dir.x, A.dir.z), length: 11, width: 2.4, dur: 0.35, color: 0xff4020 }); }
     if (A.t > 0.35 && A.t < 0.8) {
       const l = Math.hypot(A.dir.x, A.dir.z) || 1;
       A.move = { vx: A.dir.x / l * 16, vz: A.dir.z / l * 16, speed: 16 };
@@ -428,7 +430,7 @@ export class AlphaBoss extends Boss {
     return A.t > 1.0;
   }
   atk_howl(dt, A, T) {
-    if (A.t < 0.02) { this.anim.play('howl', { dur: 1.4 }); G.audio?.play('wolfDeath', { pos: this.pos }); }
+    if (A.first) { this.anim.play('howl', { dur: 1.4 }); G.audio?.play('wolfDeath', { pos: this.pos }); }
     A.move = { vx: 0, vz: 0 };
     if (A.t > 0.8 && !A.done) { A.done = true; this.summon('wolf', 2, 8, 4); G.ui.toast('A Presa-Branca chama a matilha!', 'warn'); }
     return A.t > 1.4;
@@ -464,12 +466,12 @@ export class ColossusBoss extends Boss {
     return this.approach(dt, T, 4, 1);
   }
   atk_roar(dt, A) {
-    if (A.t < 0.02) { this.anim.play('roar'); G.audio?.play('bossRoar'); G.cameraRig.shake(0.5); }
+    if (A.first) { this.anim.play('roar'); G.audio?.play('bossRoar'); G.cameraRig.shake(0.5); }
     if (A.t > 0.6 && !A.s) { A.s = true; this.summon('golem', 2, 9, 6); }
     return A.t > 1.3;
   }
   atk_slam(dt, A, T) {
-    if (A.t < 0.02) {
+    if (A.first) {
       this.anim.play('slam', { speed: 0.75 });
       const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw);
       A.p = { x: this.pos.x + fx * 5, z: this.pos.z + fz * 5 };
@@ -488,7 +490,7 @@ export class ColossusBoss extends Boss {
     return A.t > 1.9;
   }
   atk_stomp(dt, A, T) {
-    if (A.t < 0.02) { this.anim.play('slam', { speed: 1.0 }); G.fx.telegraph({ shape: 'circle', x: this.pos.x, z: this.pos.z, radius: 3, dur: 0.7, color: 0xffa020 }); }
+    if (A.first) { this.anim.play('slam', { speed: 1.0 }); G.fx.telegraph({ shape: 'circle', x: this.pos.x, z: this.pos.z, radius: 3, dur: 0.7, color: 0xffa020 }); }
     if (A.t > 0.7 && !A.wave) {
       A.wave = true;
       G.ui.toast('Pule para evitar a onda de choque! [Espaço]', 'warn');
@@ -523,7 +525,7 @@ export class ColossusBoss extends Boss {
     }, () => geo.dispose());
   }
   atk_throw(dt, A, T) {
-    if (A.t < 0.02) {
+    if (A.first) {
       this.anim.play('castBoth', { speed: 0.8 });
       A.p = { x: T.pos.x, z: T.pos.z };
       A.y = G.world.groundAt(A.p.x, A.p.z, T.pos.y + 3);
@@ -552,7 +554,7 @@ export class ColossusBoss extends Boss {
     return A.t > 1.9;
   }
   atk_rockfall(dt, A, T) {
-    if (A.t < 0.02) {
+    if (A.first) {
       this.anim.play('roar');
       G.audio?.play('bossRoar');
       A.spots = [];
@@ -602,7 +604,7 @@ export class PimpolhoBoss extends Boss {
     return this.approach(dt, T, 9, 1, Math.sin(G.time.now * 0.8) * 0.8);
   }
   atk_pie(dt, A, T) {
-    if (A.t < 0.02) this.anim.play('cast', { speed: 0.9 });
+    if (A.first) this.anim.play('cast', { speed: 0.9 });
     this.faceYaw(this.yawTo(T.pos.x, T.pos.z), 8, dt);
     if (A.t > 0.38 && !A.fired) {
       A.fired = true;
@@ -619,7 +621,7 @@ export class PimpolhoBoss extends Boss {
     return A.t > 0.9;
   }
   atk_bounce(dt, A, T) {
-    if (A.t < 0.02) {
+    if (A.first) {
       A.from = this.pos.clone();
       A.to = new THREE.Vector3(T.pos.x, 0, T.pos.z);
       A.to.y = G.world.groundAt(A.to.x, A.to.z, T.pos.y + 3);
@@ -651,7 +653,7 @@ export class PimpolhoBoss extends Boss {
     return A.t > 1.9;
   }
   atk_bombs(dt, A, T) {
-    if (A.t < 0.02) this.anim.play('castBoth', { speed: 1 });
+    if (A.first) this.anim.play('castBoth', { speed: 1 });
     if (A.t > 0.45 && !A.fired) {
       A.fired = true;
       for (let i = 0; i < 3; i++) {
@@ -685,7 +687,7 @@ export class PimpolhoBoss extends Boss {
     return A.t > 2.6;
   }
   atk_anvils(dt, A, T) {
-    if (A.t < 0.02) { this.anim.play('cheer'); this.say('Choveu bigorna! Que coisa enorme!'); }
+    if (A.first) { this.anim.play('cheer'); this.say('Choveu bigorna! Que coisa enorme!'); }
     if (A.t > 0.4 && !A.done) {
       A.done = true;
       for (let i = 0; i < 6; i++) {
@@ -766,7 +768,7 @@ export class VaelthorBoss extends Boss {
     return this.approach(dt, T, 11, 0.9, Math.sin(G.time.now * 0.6) * 0.7);
   }
   atk_orbs(dt, A, T) {
-    if (A.t < 0.02) this.anim.play('cast', { speed: 0.9 });
+    if (A.first) this.anim.play('cast', { speed: 0.9 });
     this.faceYaw(this.yawTo(T.pos.x, T.pos.z), 8, dt);
     const n = this.phase >= 3 ? 5 : 3;
     if (A.t > 0.4 && !A.fired) {
@@ -783,7 +785,7 @@ export class VaelthorBoss extends Boss {
     return A.t > 0.9;
   }
   atk_strikes(dt, A, T) {
-    if (A.t < 0.02) { this.anim.play('castBoth', { speed: 0.8 }); A.n = 0; }
+    if (A.first) { this.anim.play('castBoth', { speed: 0.8 }); A.n = 0; }
     const count = this.phase >= 2 ? 4 : 3;
     const tNext = 0.3 + A.n * 0.45;
     if (A.n < count && A.t > tNext) {
@@ -799,7 +801,7 @@ export class VaelthorBoss extends Boss {
     return A.t > 0.3 + count * 0.45 + 0.6;
   }
   atk_teleport(dt, A, T) {
-    if (A.t < 0.02) { G.fx.burst('rift', this.pos.x, this.pos.y + 1.5, this.pos.z, 1.4); this.object.visible = false; this.targetable = false; G.audio?.play('power_passo_sombrio', { pos: this.pos }); }
+    if (A.first) { G.fx.burst('rift', this.pos.x, this.pos.y + 1.5, this.pos.z, 1.4); this.object.visible = false; this.targetable = false; G.audio?.play('power_passo_sombrio', { pos: this.pos }); }
     if (A.t > 0.6 && !A.done) {
       A.done = true;
       const a = rand(0, Math.PI * 2), r = rand(9, 16);
@@ -811,7 +813,7 @@ export class VaelthorBoss extends Boss {
     return A.t > 0.9;
   }
   atk_wave(dt, A, T) {
-    if (A.t < 0.02) { this.anim.play('castSelf'); G.fx.telegraph({ shape: 'circle', x: this.pos.x, z: this.pos.z, radius: 3, dur: 0.8, color: 0xff60ff }); }
+    if (A.first) { this.anim.play('castSelf'); G.fx.telegraph({ shape: 'circle', x: this.pos.x, z: this.pos.z, radius: 3, dur: 0.8, color: 0xff60ff }); }
     if (A.t > 0.8 && !A.done) {
       A.done = true;
       ColossusBoss.prototype.shockwave.call(this, this.pos.x, this.pos.z, 22, 1.8, 0.9, 0xd070ff, 'psychic');
@@ -821,7 +823,7 @@ export class VaelthorBoss extends Boss {
     return A.t > 1.6;
   }
   atk_beam(dt, A, T) {
-    if (A.t < 0.02) {
+    if (A.first) {
       this.anim.play('cast', { dur: 1.6 });
       A.yaw = this.yawTo(T.pos.x, T.pos.z);
       A.tel = G.fx.telegraph({ shape: 'rect', x: this.pos.x, z: this.pos.z, yaw: A.yaw, length: 34, width: 2.2, dur: 1.1, color: 0xb040ff });
@@ -846,7 +848,7 @@ export class VaelthorBoss extends Boss {
     return A.t > 1.7;
   }
   atk_meteors(dt, A, T) {
-    if (A.t < 0.02) { this.anim.play('castBoth', { speed: 0.7 }); this.say('Caia, céu do Sonhar!'); }
+    if (A.first) { this.anim.play('castBoth', { speed: 0.7 }); this.say('Caia, céu do Sonhar!'); }
     if (A.t > 0.3 && !A.done) {
       A.done = true;
       for (let i = 0; i < 9; i++) {
@@ -867,7 +869,7 @@ export class VaelthorBoss extends Boss {
     return A.t > 2.6;
   }
   atk_nova(dt, A, T) {
-    if (A.t < 0.02) {
+    if (A.first) {
       this.anim.play('castSelf', { dur: 1.8 });
       G.fx.telegraph({ shape: 'circle', x: this.pos.x, z: this.pos.z, radius: 9.5, dur: 1.6, color: 0xff3080 });
       this.say('Afaste-se... ou desapareça!');
@@ -884,7 +886,7 @@ export class VaelthorBoss extends Boss {
     return A.t > 2.2;
   }
   atk_phase2(dt, A, T) {
-    if (A.t < 0.02) {
+    if (A.first) {
       this.invulnerable = true;
       this.anim.play('roar');
       this.say('Vocês acham que podem me deter? Ecos, ergam-se!');
@@ -896,7 +898,7 @@ export class VaelthorBoss extends Boss {
     return false;
   }
   atk_phase3(dt, A, T) {
-    if (A.t < 0.02) {
+    if (A.first) {
       this.invulnerable = true;
       this.say('O CORAÇÃO... É... MEU!');
       G.audio?.play('bossRoar');

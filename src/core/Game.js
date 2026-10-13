@@ -419,10 +419,10 @@ export class Game {
   // ---------------------------------------------------------------- chamas permanentes
   addPermFlame(p, scale = 1) {
     if (!p) return;
-    const light = new THREE.PointLight(0xff8a30, 6 * scale, 14, 1.8);
-    light.position.set(p.x, p.y + 0.6, p.z);
-    G.scene.add(light);
-    const f = { p, scale, light, remove: () => G.scene.remove(light) };
+    // Sem PointLight próprio: entra no conjunto fixo de luzes do mundo (evita recompilar shaders).
+    const W = G.world;
+    const f = { p, scale, x: p.x, y: p.y + 0.6, z: p.z, intensity: 6 * scale, remove: () => { const i = W.extraFlames.indexOf(f); if (i >= 0) W.extraFlames.splice(i, 1); } };
+    W.extraFlames.push(f);
     this.permFlames.push(f);
     return f;
   }
@@ -430,13 +430,12 @@ export class Game {
   updatePermFlames(dt) {
     const t = G.time.now;
     for (const f of this.permFlames) {
-      const near = G.player && Math.hypot(G.player.pos.x - f.p.x, G.player.pos.z - f.p.z) < 120;
-      f.light.visible = near;
-      if (!near) continue;
-      f.light.intensity = 6 * f.scale * (0.85 + Math.sin(t * 13) * 0.08 + Math.sin(t * 27) * 0.06);
+      if (!G.player || Math.hypot(G.player.pos.x - f.p.x, G.player.pos.z - f.p.z) > 120) continue;
+      f.intensity = 6 * f.scale * (0.85 + Math.sin(t * 13) * 0.08 + Math.sin(t * 27) * 0.06);
       if (Math.random() < dt * 30) G.fx.emit({ x: f.p.x + rand(-0.2, 0.2), y: f.p.y, z: f.p.z + rand(-0.2, 0.2), count: 2, color: 0xffe080, color2: 0xff3010, size: 0.9 * f.scale, sizeEnd: 0.1, life: 0.6, speed: 0.5, up: 2.2 * f.scale, radius: 0.25 * f.scale });
     }
   }
+
 
   // ---------------------------------------------------------------- morte
   onPlayerDied() {
